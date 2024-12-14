@@ -712,18 +712,20 @@ public struct ChatQuery: Equatable, Codable, Streamable {
         case user
         case stream
     }
+
+  public enum JSONValue: Hashable, Sendable {
+      case string(String)
+      case number(Double)
+      case integer(Int)
+      case object([String: Self])
+      case array([Self])
+      case boolean(Bool)
+      case null
+  }
 }
 
-public enum JSONValue: Hashable, Equatable, Sendable {
-  case string(String)
-  case number(Double)
-  case integer(Int)
-  case object([String: Self])
-  case array([Self])
-  case boolean(Bool)
-  case null
-
-  public static func == (lhs: JSONValue, rhs: JSONValue) -> Bool {
+extension ChatQuery.JSONValue: Equatable {
+  public static func == (lhs: Self, rhs: Self) -> Bool {
     switch (lhs, rhs) {
     case (.string(let lhsValue), .string(let rhsValue)):
       return lhsValue == rhsValue
@@ -749,7 +751,7 @@ public enum JSONValue: Hashable, Equatable, Sendable {
   }
 }
 
-extension JSONValue: Codable {
+extension ChatQuery.JSONValue: Codable {
   public func encode(to encoder: any Encoder) throws {
     var container = encoder.singleValueContainer()
     switch self {
