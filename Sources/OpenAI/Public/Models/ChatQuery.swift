@@ -992,156 +992,16 @@ public struct ChatQuery: Equatable, Codable, Streamable {
             /// https://platform.openai.com/docs/guides/text-generation/function-calling
             /// https://json-schema.org/understanding-json-schema/
             /// **Python library defines only [String: Object] dictionary.
-            public let parameters: Self.FunctionParameters?
+            public let parameters: [String: JSONValue]?
 
             public init(
                 name: String,
                 description: String? = nil,
-                parameters: Self.FunctionParameters? = nil
+                parameters: [String: JSONValue]? = nil
             ) {
                 self.name = name
                 self.description = description
                 self.parameters = parameters
-            }
-
-            /// See the [guide](/docs/guides/gpt/function-calling) for examples, and the [JSON Schema reference](https://json-schema.org/understanding-json-schema/) for documentation about the format.
-            public struct FunctionParameters: Codable, Equatable {
-
-                public let type: Self.JSONType
-                public let properties: [String: Property]?
-                public let required: [String]?
-                public let pattern: String?
-                public let const: String?
-                public let `enum`: [String]?
-                public let multipleOf: Int?
-                public let minimum: Int?
-                public let maximum: Int?
-
-                public init(
-                    type: Self.JSONType,
-                    properties: [String : Property]? = nil,
-                    required: [String]? = nil,
-                    pattern: String? = nil,
-                    const: String? = nil,
-                    enum: [String]? = nil,
-                    multipleOf: Int? = nil,
-                    minimum: Int? = nil,
-                    maximum: Int? = nil
-                ) {
-                    self.type = type
-                    self.properties = properties
-                    self.required = required
-                    self.pattern = pattern
-                    self.const = const
-                    self.`enum` = `enum`
-                    self.multipleOf = multipleOf
-                    self.minimum = minimum
-                    self.maximum = maximum
-                }
-
-                public struct Property: Codable, Equatable {
-                    public typealias JSONType = ChatQuery.ChatCompletionToolParam.FunctionDefinition.FunctionParameters.JSONType
-
-                    public let type: Self.JSONType
-                    public let description: String?
-                    public let format: String?
-                    public let items: Self.Items?
-                    public let required: [String]?
-                    public let pattern: String?
-                    public let const: String?
-                    public let `enum`: [String]?
-                    public let multipleOf: Int?
-                    public let minimum: Double?
-                    public let maximum: Double?
-                    public let minItems: Int?
-                    public let maxItems: Int?
-                    public let uniqueItems: Bool?
-
-                    public init(
-                        type: Self.JSONType,
-                        description: String? = nil,
-                        format: String? = nil,
-                        items: Self.Items? = nil,
-                        required: [String]? = nil,
-                        pattern: String? = nil,
-                        const: String? = nil,
-                        enum: [String]? = nil,
-                        multipleOf: Int? = nil,
-                        minimum: Double? = nil,
-                        maximum: Double? = nil,
-                        minItems: Int? = nil,
-                        maxItems: Int? = nil,
-                        uniqueItems: Bool? = nil
-                    ) {
-                        self.type = type
-                        self.description = description
-                        self.format = format
-                        self.items = items
-                        self.required = required
-                        self.pattern = pattern
-                        self.const = const
-                        self.`enum` = `enum`
-                        self.multipleOf = multipleOf
-                        self.minimum = minimum
-                        self.maximum = maximum
-                        self.minItems = minItems
-                        self.maxItems = maxItems
-                        self.uniqueItems = uniqueItems
-                    }
-
-                    public struct Items: Codable, Equatable {
-                        public typealias JSONType = ChatQuery.ChatCompletionToolParam.FunctionDefinition.FunctionParameters.JSONType
-
-                        public let type: Self.JSONType
-                        public let properties: [String: Property]?
-                        public let pattern: String?
-                        public let const: String?
-                        public let `enum`: [String]?
-                        public let multipleOf: Int?
-                        public let minimum: Double?
-                        public let maximum: Double?
-                        public let minItems: Int?
-                        public let maxItems: Int?
-                        public let uniqueItems: Bool?
-
-                        public init(
-                            type: Self.JSONType,
-                            properties: [String : Property]? = nil,
-                            pattern: String? = nil,
-                            const: String? = nil,
-                            `enum`: [String]? = nil,
-                            multipleOf: Int? = nil,
-                            minimum: Double? = nil,
-                            maximum: Double? = nil,
-                            minItems: Int? = nil,
-                            maxItems: Int? = nil,
-                            uniqueItems: Bool? = nil
-                        ) {
-                            self.type = type
-                            self.properties = properties
-                            self.pattern = pattern
-                            self.const = const
-                            self.`enum` = `enum`
-                            self.multipleOf = multipleOf
-                            self.minimum = minimum
-                            self.maximum = maximum
-                            self.minItems = minItems
-                            self.maxItems = maxItems
-                            self.uniqueItems = uniqueItems
-                        }
-                    }
-                }
-
-
-                public enum JSONType: String, Codable {
-                    case integer
-                    case string
-                    case boolean
-                    case array
-                    case object
-                    case number
-                    case null
-                }
             }
         }
 
@@ -1172,6 +1032,83 @@ public struct ChatQuery: Equatable, Codable, Streamable {
         case user
         case stream
     }
+
+  public enum JSONValue: Hashable, Sendable {
+      case string(String)
+      case number(Double)
+      case integer(Int)
+      case object([String: Self])
+      case array([Self])
+      case boolean(Bool)
+      case null
+  }
+}
+
+extension ChatQuery.JSONValue: Equatable {
+  public static func == (lhs: Self, rhs: Self) -> Bool {
+    switch (lhs, rhs) {
+    case (.string(let lhsValue), .string(let rhsValue)):
+      return lhsValue == rhsValue
+    case (.number(let lhsValue), .number(let rhsValue)):
+      return lhsValue == rhsValue
+    case (.integer(let lhsValue), .integer(let rhsValue)):
+      return lhsValue == rhsValue
+    case (.number(let lhsValue), .integer(let rhsValue)):
+      return lhsValue == Double(rhsValue)
+    case (.integer(let lhsValue), .number(let rhsValue)):
+      return Double(lhsValue) == rhsValue
+    case (.object(let lhsValue), .object(let rhsValue)):
+      return lhsValue == rhsValue
+    case (.array(let lhsValue), .array(let rhsValue)):
+      return lhsValue == rhsValue
+    case (.boolean(let lhsValue), .boolean(let rhsValue)):
+      return lhsValue == rhsValue
+    case (.null, .null):
+      return true
+    default:
+      return false
+    }
+  }
+}
+
+extension ChatQuery.JSONValue: Codable {
+  public func encode(to encoder: any Encoder) throws {
+    var container = encoder.singleValueContainer()
+    switch self {
+    case .string(let string): try container.encode(string)
+    case .number(let double): try container.encode(double)
+    case .integer(let int): try container.encode(int)
+    case .object(let dictionary): try container.encode(dictionary)
+    case .array(let array): try container.encode(array)
+    case .boolean(let bool): try container.encode(bool)
+    case .null: try container.encodeNil()
+    }
+  }
+
+  public init(from decoder: Decoder) throws {
+    let container = try decoder.singleValueContainer()
+    if let string = try? container.decode(String.self) {
+      self = .string(string)
+    } else if let int = try? container.decode(Int.self) {
+      // It is important to check for integer before double, as all integers are also doubles.
+      self = .integer(int)
+    } else if let double = try? container.decode(Double.self) {
+      self = .number(double)
+    } else if let dictionary = try? container.decode([String: Self].self) {
+      self = .object(dictionary)
+    } else if let array = try? container.decode([Self].self) {
+      self = .array(array)
+    } else if let bool = try? container.decode(Bool.self) {
+      self = .boolean(bool)
+    } else if container.decodeNil() {
+      self = .null
+    } else {
+      throw DecodingError.dataCorruptedError(
+        in: container,
+        debugDescription: "Unrecognized JSON value"
+      )
+    }
+  }
 }
 
 /// See the [guide](/docs/guides/gpt/function-calling) for examples, and the [JSON Schema reference](https://json-schema.org/understanding-json-schema/) for documentation about the format.
